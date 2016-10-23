@@ -4,8 +4,6 @@
 //(TIMER1B)T1CCP1  --> PF3 (LED verde)
 // Esto se puede ver en el Data-Sheet del micro (Tiva TM4C123HG6PM Microcontroller Data Sheet, pag.706-707)
 
-// Hemos hecho una variante que cambio el ciclo de trabajo de un solo LED a lo largo del tiempo, lo cual supone un aumento
-// del brillo hasta su valor maximo y una disminucion posterior.
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -21,17 +19,13 @@
 #include "driverlib/pin_map.h" // Include para poder configurar el pin como salida PWM
 #include "inc/hw_gpio.h"
 
-#define PWMCYCLE    320         // Periodo de la onda PWM que hemos definido (el valor maximo posible es 65535)
-#define DUTYCYCLE99 PWMCYCLE*0.99 // Diferentes ciclos de trabajo de ejemplo; cuanto mas
-#define DUTYCYCLE75 PWMCYCLE*0.75 // cercano a PWMCYCLE, menos tiempo se ilumina el LED
-#define DUTYCYCLE25 PWMCYCLE*0.25
-
-double pwm=0.5;
+#define PWMCYCLE    64000         // Periodo de la onda PWM que hemos definido (el valor maximo posible es 65535)
+double pwm=0.1;
 
 int main(void) {
 
-	// Reloj del sistema a 40MHz (PLL-200MHz/5=40MHz)
-	SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+	//Reloj del sistema a 16Mhz (OSC) / 5 = 3.2 MHz
+	SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_OSC|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 
 	//Configure PWM Clock to match system
 	SysCtlPWMClockSet(SYSCTL_PWMDIV_1);
@@ -49,10 +43,10 @@ int main(void) {
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
 
 	// Configura pines conectados a LEDs como salidas GPIO
-	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
+	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2|GPIO_PIN_3);
 
 	// Apaga los LEDs
-	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3, 0);
+	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2|GPIO_PIN_3, 0);
 
 
 	//PWM //MIRAR PORQ!!!!!
@@ -64,13 +58,13 @@ int main(void) {
 	PWMGenConfigure(PWM1_BASE, PWM_GEN_3, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
 
 	//Set the Period (expressed in clock ticks)
-	PWMGenPeriodSet(PWM1_BASE, PWM_GEN_2, 320);
-	PWMGenPeriodSet(PWM1_BASE, PWM_GEN_3, 320);
+	PWMGenPeriodSet(PWM1_BASE, PWM_GEN_2, PWMCYCLE);
+	PWMGenPeriodSet(PWM1_BASE, PWM_GEN_3, PWMCYCLE);
 
 	//Set PWM duty-50% (Period /2)
 	//PWMPulseWidthSet(PWM1_BASE, PWM_OUT_5,100);
-	PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6,160);
-	PWMPulseWidthSet(PWM1_BASE, PWM_OUT_7,160);
+	PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6,PWMCYCLE*0.5);
+	PWMPulseWidthSet(PWM1_BASE, PWM_OUT_7,PWMCYCLE*0.5);
 
 	// Enable the PWM generator
 	PWMGenEnable(PWM1_BASE, PWM_GEN_2);
@@ -86,20 +80,22 @@ int main(void) {
 
 void RutinaISR(void)
 {
+	//El paso lo ajustamos a 0.01 y nuestro rango sera del 6% al 20% ya que en el 10% estaria en posicion neutra
+
 	uint8_t ui8Changed,ui8Buttons;
 	uint8_t status=ButtonsPoll(&ui8Changed,&ui8Buttons);
 
 	if (ui8Buttons&GPIO_PIN_4)
 	{
-		if(pwm<=0.95){
-			pwm+=0.05;
+		if(pwm<0.2){
+			pwm+=0.01;
 			PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6,pwm*PWMCYCLE);
 			PWMPulseWidthSet(PWM1_BASE, PWM_OUT_7,pwm*PWMCYCLE);
 		}
 	}
 	if (ui8Buttons&GPIO_PIN_0){
-		if(pwm>=0.05){
-			pwm-=0.05;
+		if(pwm>0.6){
+			pwm-=0.01;
 			PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6,pwm*PWMCYCLE);
 			PWMPulseWidthSet(PWM1_BASE, PWM_OUT_7,pwm*PWMCYCLE);
 		}

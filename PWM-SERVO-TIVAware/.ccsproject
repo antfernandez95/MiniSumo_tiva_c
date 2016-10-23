@@ -2,5 +2,5 @@
 <?ccsproject version="1.0"?>
 <projectOptions>
 	<deviceFamily value="TMS470"/>
-	<origin value="//Mac/Home/Downloads/PWM-SERVO-TIVAware"/>
+	<origin value="//Mac/Home/Documents/GitHub/MiniSumo_tiva_c/PWM-SERVO-TIVAware"/>
 </projectOptions>
