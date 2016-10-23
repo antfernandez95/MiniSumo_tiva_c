@@ -1,2 +1,4 @@
 # MiniSumo_tiva_c
-Proyecto universitario para hacer un minisumo con una Tiva C
+University project to make a minisumo robot 🤖 with a Tiva C series
+We are two students who will make it step by step 
+Sorry for my English and enjoy with us 
